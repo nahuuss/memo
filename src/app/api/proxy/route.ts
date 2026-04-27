@@ -11,7 +11,7 @@ export async function GET(request: Request) {
 
   try {
     // Implementamos un bucle para resolver redirecciones de listas M3U sin recursividad
-    let finalData: ArrayBuffer | null = null;
+    let finalData: any = null;
     let finalContentType: string = 'application/vnd.apple.mpegurl';
     let maxRedirects = 3;
 
