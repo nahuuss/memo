@@ -1,0 +1,13 @@
+{
+  "siteName": "AniMeMoOoTV",
+  "twitchChannel": "sephiros110",
+  "mockWebViewers": 1,
+  "mockTwitchViewers": 40,
+  "hlsServers": [
+    {
+      "id": "server-1777248827836",
+      "name": "AR",
+      "url": "https://m3u.cl/lista/AR.m3u"
+    }
+  ]
+}
