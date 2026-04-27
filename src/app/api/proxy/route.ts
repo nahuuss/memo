@@ -10,29 +10,32 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Implementamos un bucle para resolver redirecciones de listas M3U sin recursividad
     let finalData: any = null;
     let finalContentType: string = 'application/vnd.apple.mpegurl';
     let maxRedirects = 3;
 
     while (maxRedirects > 0) {
+      // Intentamos simular un navegador real al máximo para evitar el error 403
       const response = await fetch(targetUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+          'Accept': '*/*',
+          'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+          'Referer': 'https://www.google.com/',
+          'Origin': 'https://www.google.com'
         },
-        // En Vercel es mejor no usar caché agresivo en el proxy
         cache: 'no-store'
       });
 
       if (!response.ok) {
-        throw new Error(`Target responded with ${response.status}`);
+        // Si sigue dando 403, devolvemos el error detallado para que el usuario sepa que es un bloqueo de IP de Vercel
+        throw new Error(`Target responded with ${response.status}. Esto suele ocurrir porque el sitio de origen bloquea las IPs de servidores cloud como Vercel.`);
       }
 
       const contentType = response.headers.get('content-type') || '';
       const data = await response.arrayBuffer();
       const text = new TextDecoder().decode(data);
 
-      // Si es una lista M3U (lista de canales), extraemos el primer stream y volvemos a intentar
       if (text.includes('#EXTM3U') && !text.includes('#EXT-X-STREAM-INF') && !text.includes('#EXT-X-MEDIA-SEQUENCE')) {
         const lines = text.split('\n');
         const firstStream = lines.find(line => {
@@ -48,13 +51,11 @@ export async function GET(request: Request) {
           }
           targetUrl = nextUrl;
           maxRedirects--;
-          continue; // Reintento con la nueva URL
+          continue;
         }
       }
 
-      // Si llegamos aquí, es un manifiesto HLS o un fragmento de video
       if (text.includes('#EXTM3U')) {
-        // Es un manifiesto HLS: reescribimos URLs para que pasen por el proxy
         const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
         const lines = text.split('\n');
         
@@ -67,7 +68,6 @@ export async function GET(request: Request) {
                 absoluteUrl = new URL(trimmed, baseUrl).href;
               } catch (e) { return line; }
             }
-            // Evitar doble proxy
             if (absoluteUrl.startsWith(origin + '/api/proxy')) return absoluteUrl;
             return `${origin}/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
           }
@@ -78,11 +78,10 @@ export async function GET(request: Request) {
         finalData = new TextEncoder().encode(rewrittenText);
         finalContentType = contentType || 'application/vnd.apple.mpegurl';
       } else {
-        // Es un fragmento binario o algo que no necesita reescritura
         finalData = data;
         finalContentType = contentType;
       }
-      break; // Salimos del bucle
+      break;
     }
 
     if (!finalData) throw new Error("Failed to process data");
@@ -93,8 +92,7 @@ export async function GET(request: Request) {
         'Content-Type': finalContentType,
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Cache-Control': 'public, max-age=5',
-        'X-Proxy-Target': targetUrl
+        'Cache-Control': 'public, max-age=5'
       },
     });
   } catch (error: any) {
