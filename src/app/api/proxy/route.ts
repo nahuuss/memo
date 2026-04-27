@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     }
 
     let contentType = response.headers.get('content-type') || '';
-    let data: ArrayBuffer = await response.arrayBuffer();
+    let data: any = await response.arrayBuffer();
     
     // Solo procesamos como texto si parece ser un manifiesto o lista
     const isM3U = targetUrl.includes('.m3u') || contentType.includes('mpegurl') || contentType.includes('application/x-mpegurl') || contentType.includes('text/plain');

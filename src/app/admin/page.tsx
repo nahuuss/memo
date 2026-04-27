@@ -10,7 +10,10 @@ interface HLSServer {
 }
 
 interface Config {
+  siteName: string;
   twitchChannel: string;
+  mockWebViewers: number;
+  mockTwitchViewers: number;
   hlsServers: HLSServer[];
 }
 

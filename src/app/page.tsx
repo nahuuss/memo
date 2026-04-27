@@ -4,10 +4,22 @@ import React, { useState, useEffect } from 'react';
 import HLSPlayer from '@/components/HLSPlayer';
 import TwitchEmbed from '@/components/TwitchEmbed';
 
+interface HLSServer {
+  id: string;
+  name: string;
+  url: string;
+}
+
+interface Config {
+  siteName: string;
+  twitchChannel: string;
+  hlsServers: HLSServer[];
+}
+
 export default function Home() {
-  const [config, setConfig] = useState<any>(null);
+  const [config, setConfig] = useState<Config | null>(null);
   const [showTwitch, setShowTwitch] = useState(true);
-  const [currentServer, setCurrentServer] = useState<any>(null);
+  const [currentServer, setCurrentServer] = useState<HLSServer | null>(null);
   const [webViewers, setWebViewers] = useState(0);
   const [twitchViewers, setTwitchViewers] = useState(0);
 
